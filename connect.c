@@ -1963,7 +1963,23 @@ readpass( const char* prompt, ...)
         char *askpass = getparam(ENV_SSH_ASKPASS), *cmd;
 	int cmd_size = strlen(askpass) +1 +1 +strlen(buf) +1 +1;
         cmd = xmalloc(cmd_size);
+#if defined(_WIN32) && !defined(__CYGWIN32__)
+	{
+	    /* Normalize path string of command ('/' => '\\').  This is
+	       required for the case of env value is for the cygwin ssh
+	       because cmd.exe treats '/' as option character.
+	       Note that this does not resolve mounts on cygwin.
+	    */
+	    char *p= askpass;
+	    while (*p) {
+		if (*p == '/')
+		    *p = '\\';
+		p++;
+	    }
+	}
+#endif	/* _WIN32 && not __CYGWIN32__ */
         snprintf(cmd, cmd_size, "%s \"%s\"", askpass, buf);
+        debug("executing: %s", cmd);
         fp = popen(cmd, "r");
         free(cmd);
         if ( fp == NULL )
