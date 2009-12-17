@@ -285,7 +285,7 @@ static char *usage = "usage: %s [-dnhst45] [-p local-port]"
 /* name of this program */
 char *progname = NULL;
 char *progdesc = "connect --- simple relaying command via proxy.";
-char *version = "1.100";
+char *version = "1.101";
 
 /* set of character for strspn() */
 const char *digits    = "0123456789";
