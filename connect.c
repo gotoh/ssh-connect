@@ -22,7 +22,6 @@
  * PROJECT:  My Test Program
  * AUTHOR:   Shun-ichi GOTO <gotoh@taiyo.co.jp>
  * CREATE:   Wed Jun 21, 2000
- * REVISION: $Revision: 100 $
  * ---------------------------------------------------------
  *
  * Getting Source
@@ -251,10 +250,6 @@
 
 
 
-#ifndef LINT
-static char *vcid = "$Id: connect.c 100 2007-07-03 10:48:26Z gotoh $";
-#endif
-
 /* Microsoft Visual C/C++ has _snprintf() and _vsnprintf() */
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -290,10 +285,7 @@ static char *usage = "usage: %s [-dnhst45] [-p local-port]"
 /* name of this program */
 char *progname = NULL;
 char *progdesc = "connect --- simple relaying command via proxy.";
-char *rcs_revstr = "$Revision: 100 $";
-char *revstr = NULL;
-int major_version = 1;
-int minor_version = 0;
+char *version = "1.100";
 
 /* set of character for strspn() */
 const char *digits    = "0123456789";
@@ -1465,23 +1457,6 @@ resolve_port( const char *service )
     return (u_short)port;
 }
 
-void
-make_revstr(void)
-{
-    char *ptr;
-    size_t len;
-    ptr = strstr(rcs_revstr, ": ");
-    if (!ptr) {
-        revstr = strdup("unknown");
-        return;
-    }
-    ptr += 2;
-    /* assume subversion's keyword expansion like "Revision: 96". */
-    minor_version = atoi(ptr);
-    revstr = xmalloc(20);
-    snprintf(revstr, 20, "%d.%d", major_version, minor_version);
-}
-
 int
 getarg( int argc, char **argv )
 {
@@ -1609,7 +1584,7 @@ getarg( int argc, char **argv )
                 break;
 
             case 'V':                           /* print version */
-                fprintf(stderr, "%s\nVersion %s\n", progdesc, revstr);
+                fprintf(stderr, "%s\nVersion %s\n", progdesc, version);
                 exit(0);
 
             case 'd':                           /* debug mode */
@@ -1633,7 +1608,7 @@ getarg( int argc, char **argv )
 
     /* check destination HOST (MUST) */
     if ( argc == 0  ) {
-        fprintf(stderr, "%s\nVersion %s\n", progdesc, revstr);
+        fprintf(stderr, "%s\nVersion %s\n", progdesc, version);
         fprintf(stderr, usage, progname);
         exit(0);
     }
@@ -2861,9 +2836,7 @@ main( int argc, char **argv )
 #endif /* _WIN32 */
 
     /* initialization */
-    make_revstr();
     getarg( argc, argv );
-    debug("Program is $Revision: 100 $\n");
 
     /* Open local_in and local_out if forwarding a port */
     if ( local_type == LOCAL_SOCKET ) {
