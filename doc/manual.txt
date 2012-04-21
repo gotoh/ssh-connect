@@ -342,8 +342,8 @@ script on ppp up/down.
 
 There's another example of wrapper script (contributed by Darren
 Tucker). This script costs executing ifconfig and grep to detect
-current environment, but it works. (NOTE: you should modify addresses
-if you use it.)
+current environment, but it works.  Note that you should modify
+addresses if you use it.
 
 ----
 #!/bin/sh
@@ -530,11 +530,8 @@ out side of the wall.
                                                  connect <-- tcp -->  port
 ----
 
-[NOTE]
-==================================================
-If you wanna use this, you should give up hosting https
-service at port 443 on you external host 'home'.
-==================================================
+NOTE: If you wanna use this, you should give up hosting https
+      service at port 443 on you external host 'home'.
 
 
 F.Y.I.
