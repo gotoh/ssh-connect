@@ -1,7 +1,7 @@
 /***********************************************************************
  * connect.c -- Make socket connection using SOCKS4/5 and HTTP tunnel.
  *
- * Copyright (c) 2000-2006 Shun-ichi Goto
+ * Copyright (c) 2000-2006, 2012 Shun-ichi Goto
  * Copyright (c) 2002, J. Grant (English Corrections)
  *
  * This program is free software; you can redistribute it and/or
@@ -46,12 +46,12 @@
  *  On SOLARIS:
  *      $ gcc -o connect -lresolv -lsocket -lnsl connect.c
  *
- *  on Win32 environment:
- *      $ cl connect.c wsock32.lib advapi32.lib
+ *  on Win32 environment, platform SDK (for iphlpapi.lib) is required:
+ *      $ cl connect.c advapi32.lib iphlpapi.lib ws2_32.lib
  *    or
- *      $ bcc32 connect.c wsock32.lib advapi32.lib
- *    or
- *      $ gcc connect.c -o connect
+ *      $ bcc32 connect.c advapi32.lib iphlpapi.lib ws2_32.lib
+ *    or for mingw32
+ *      $ gcc connect.c -o connect -lwsock32 -liphlpapi
  *
  *  on Mac OS X environment:
  *      $ gcc connect.c -o connect -lresolv
@@ -170,7 +170,7 @@
  *
  * ssh-askpass support
  * ===================
-  *
+ *
  *   You can use ssh-askpass (came from OpenSSH or else) to specify
  *   password on graphical environment (X-Window or MS Windows). To use
  *   this, set program name to environment variable SSH_ASKPASS. On UNIX,
@@ -199,6 +199,15 @@
  *  HTTP Authentication: Basic and Digest Access Authentication -- RFC 2617
  *             For proxy authentication, refer these documents.
  *
+ * History
+ * =======
+ *
+ *   2012-04-21: Add feature to make direct connection when remote target
+ *               host is in local network. For this featurer, enumerates
+ *               network interface addresses and add them to direct
+ *               address table automatically. Currently, this feature is
+ *               available on win32 platform only and needs to link with
+ *               iphlpapi.lib.
  ***********************************************************************/
 
 #include <stdio.h>
@@ -220,6 +229,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock.h>
+#include <iphlpapi.h>
 #include <sys/stat.h>
 #include <io.h>
 #include <conio.h>
@@ -285,7 +295,7 @@ static char *usage = "usage: %s [-dnhst45] [-p local-port]"
 /* name of this program */
 char *progname = NULL;
 char *progdesc = "connect --- simple relaying command via proxy.";
-char *version = "1.101";
+char *version = "1.102";
 
 /* set of character for strspn() */
 const char *digits    = "0123456789";
@@ -917,6 +927,36 @@ parse_addr_pair (const char *str, struct in_addr *addr, struct in_addr *mask)
     }
     return 0;
 }
+
+#ifdef _WIN32
+// updates direct table with local net addr/mask informations
+// NOTE: needs platform SDK for compile and link with iphlpapi.lib.
+void
+make_localnet_as_direct (void)
+{
+    DWORD i;
+    PMIB_IPADDRTABLE table;
+    DWORD size = 0;
+    DWORD ret = 0;
+    /* allocate table */
+    if (GetIpAddrTable(NULL, &size, 0) == ERROR_INSUFFICIENT_BUFFER)
+	table = (MIB_IPADDRTABLE *) xmalloc (size);
+    /* get information */
+    ret = GetIpAddrTable(table, &size, 0);
+    if (ret != NO_ERROR) {
+	error("GetIpAddrTable() failed, errno=%d\n", WSAGetLastError());
+	return;
+    }
+    /* add local addr/mask to the table */
+    debug("making direct addr list from network adapter address:\n");
+    for (i=0; i<table->dwNumEntries; i++) {
+	add_direct_addr((struct in_addr *)&table->table[i].dwAddr,
+			(struct in_addr *)&table->table[i].dwMask, 0);
+    }
+    free(table);
+}
+#endif
+
 
 void
 initialize_direct_addr (void)
@@ -1604,6 +1644,9 @@ getarg( int argc, char **argv )
     if ( 0 < err )
         goto quit;
 
+    /* add local addr/mask to direct table automaticaly */
+    make_localnet_as_direct();
+    
     set_relay( method, server );
 
     /* check destination HOST (MUST) */
