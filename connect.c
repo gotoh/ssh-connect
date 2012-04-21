@@ -295,7 +295,7 @@ static char *usage = "usage: %s [-dnhst45] [-p local-port]"
 /* name of this program */
 char *progname = NULL;
 char *progdesc = "connect --- simple relaying command via proxy.";
-char *version = "1.102";
+char *version = "1.103";
 
 /* set of character for strspn() */
 const char *digits    = "0123456789";
@@ -1655,7 +1655,7 @@ getarg( int argc, char **argv )
         fprintf(stderr, usage, progname);
         exit(0);
     }
-    dest_host = argv[0];
+    dest_host = strdup(argv[0]);
     /* decide port or service name from programname or argument */
     if ( ((ptr=strrchr( progname, '/' )) != NULL) ||
          ((ptr=strchr( progname, '\\')) != NULL) )
@@ -2917,6 +2917,16 @@ retry:
         set_timeout (connect_timeout);
 #endif /* not _WIN32 */
 
+    /* resolve host name localy to determine direct or not if allowed */
+    if (relay_method == METHOD_SOCKS &&
+        socks_resolve == RESOLVE_LOCAL &&
+	local_resolve (dest_host, &dest_addr) == 0) {
+	/* resolved, replace dest_host
+	   if failed, simply ignore here */
+	free(dest_host);
+	dest_host = strdup(inet_ntoa(dest_addr.sin_addr));
+    }
+	
     if (check_direct(dest_host))
         relay_method = METHOD_DIRECT;
     /* make connection */
@@ -2937,11 +2947,6 @@ retry:
     if (socks_ns.sin_addr.s_addr != 0)
         switch_ns (&socks_ns);
 #endif /* not _WIN32 && not __CYGWIN32__ */
-    if (relay_method == METHOD_SOCKS &&
-        socks_resolve == RESOLVE_LOCAL &&
-        local_resolve (dest_host, &dest_addr) < 0) {
-        fatal("Unknown host: %s", dest_host);
-    }
 
     /** relay negociation **/
     switch ( relay_method ) {
