@@ -255,7 +255,9 @@
 #endif /* !_WIN32 */
 
 #ifdef _WIN32
+#ifndef ECONNRESET
 #define ECONNRESET WSAECONNRESET
+#endif	/* not ECONNRESET */
 #endif /* _WI32 */
 
 
