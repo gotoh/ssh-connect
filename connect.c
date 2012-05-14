@@ -2962,13 +2962,13 @@ retry:
         ret = begin_http_relay(remote);
         switch (ret) {
         case START_ERROR:
-            close (remote);
+            closesocket (remote);
             fatal("failed to begin relaying via HTTP.\n");
         case START_OK:
             break;
         case START_RETRY:
             /* retry with authentication */
-            close (remote);
+            closesocket (remote);
             goto retry;
         }
         break;
