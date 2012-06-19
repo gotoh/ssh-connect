@@ -1646,8 +1646,10 @@ getarg( int argc, char **argv )
     if ( 0 < err )
         goto quit;
 
+#ifdef _WIN32
     /* add local addr/mask to direct table automaticaly */
     make_localnet_as_direct();
+#endif
     
     set_relay( method, server );
 
