@@ -1,18 +1,25 @@
 ### Makefile 
 ###
 ### Create:   2009-12-17
+### Updated:  2012-06-21
 ### 
+
+UNAME := $(shell uname -s)
 
 CC=gcc
 CFLAGS=
 LDLIBS=
 
 ## for Mac OS X environmet, use one of options
-#CFLAGS=-DBIND_8_COMPAT=1
-#LDLIBS=-lresolv
+ifeq ($(UNAME), Darwin)
+	CFLAGS=-DBIND_8_COMPAT=1
+	LDLIBS=-lresolv
+endif
 
 ## for Solalis
-#LDLIBS=-lresolv -lsocket -lnsl
+ifeq ($(UNAME), SunOS)
+	LDLIBS=-lresolv -lsocket -lnsl
+endif
 
 all: connect
 
@@ -24,7 +31,7 @@ connect.o: connect.c
 clean:
 	rm -f connect.o *~
 veryclean: clean
-	rm -f connect
+	rm -f connect connect.exe
 rebuild: veryclean all
 
 ### End of Makefile
