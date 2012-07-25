@@ -254,6 +254,11 @@
 #endif /* not ( not _WIN32 && not __CYGWIN32__) */
 #endif /* !_WIN32 */
 
+/* Older Solaris doesn't define INADDR_NONE so we may need to */
+#ifndef INADDR_NONE
+#define INADDR_NONE ((unsigned long) -1)
+#endif
+
 #ifdef _WIN32
 #ifndef ECONNRESET
 #define ECONNRESET WSAECONNRESET
