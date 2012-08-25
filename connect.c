@@ -245,7 +245,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#if !defined(_WIN32) && !defined(__CYGWIN32__)
+#if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__INTERIX)
 #define WITH_RESOLVER 1
 #include <arpa/nameser.h>
 #include <resolv.h>
@@ -1757,7 +1757,7 @@ set_timeout(int timeout)
 }
 #endif
 
-#if !defined(_WIN32) && !defined(__CYGWIN32__)
+#if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__INTERIX)
 void
 switch_ns (struct sockaddr_in *ns)
 {
@@ -1766,7 +1766,7 @@ switch_ns (struct sockaddr_in *ns)
     _res.nscount = 1;
     debug("Using nameserver at %s\n", inet_ntoa(ns->sin_addr));
 }
-#endif /* !_WIN32 && !__CYGWIN32__ */
+#endif /* !_WIN32 && !__CYGWIN32__ && !__INTERIX */
 
 /* TODO: IPv6
    TODO: fallback if askpass execution failed.
@@ -2952,10 +2952,10 @@ retry:
     }
 
     /** resolve destination host (SOCKS) **/
-#if !defined(_WIN32) && !defined(__CYGWIN32__)
+#if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__INTERIX)
     if (socks_ns.sin_addr.s_addr != 0)
         switch_ns (&socks_ns);
-#endif /* not _WIN32 && not __CYGWIN32__ */
+#endif /* not _WIN32 && not __CYGWIN32__ && !defined(__INTERIX) */
 
     /** relay negociation **/
     switch ( relay_method ) {
