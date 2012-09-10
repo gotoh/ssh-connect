@@ -1067,6 +1067,7 @@ is_direct_address (const struct in_addr addr)
     ends_with("foo.beebar.com", "bar.com") => 0 (partial match)
     ends_with("bar", "bar.com")            => 0 (shorter)
  */
+int
 domain_match(const char *s1, const char *s2)
 {
     int len1, len2;
