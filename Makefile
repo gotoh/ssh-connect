@@ -24,6 +24,10 @@ endif
 
 ## for Microsoft Windows native
 ifeq ($(findstring Windows, ${WINVER}), Windows)
+    ifeq (${CC}, clang)
+	CFLAGS=-ccc-gcc-name llvm-gcc.exe
+	LDLIBS=-ccc-gcc-name llvm-gcc.exe
+    endif
     LDLIBS := ${LDLIBS} -lws2_32 -liphlpapi
 endif
 
