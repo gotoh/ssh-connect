@@ -5,6 +5,7 @@
 ### 
 
 UNAME := $(shell uname -s)
+WINVER := $(shell ver)
 
 CC=gcc
 CFLAGS=
@@ -19,6 +20,11 @@ endif
 ## for Solaris
 ifeq ($(UNAME), SunOS)
 	LDLIBS=-lresolv -lsocket -lnsl
+endif
+
+## for Microsoft Windows native
+ifeq ($(findstring Windows, ${WINVER}), Windows)
+    LDLIBS := ${LDLIBS} -lws2_32 -liphlpapi
 endif
 
 all: connect
