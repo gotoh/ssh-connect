@@ -10,13 +10,13 @@ CC=gcc
 CFLAGS=
 LDLIBS=
 
-## for Mac OS X environmet, use one of options
+## for Mac OS X environment, use one of options
 ifeq ($(UNAME), Darwin)
 	CFLAGS=-DBIND_8_COMPAT=1
 	LDLIBS=-lresolv
 endif
 
-## for Solalis
+## for Solaris
 ifeq ($(UNAME), SunOS)
 	LDLIBS=-lresolv -lsocket -lnsl
 endif
