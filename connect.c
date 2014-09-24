@@ -1458,7 +1458,7 @@ set_relay( int method, char *spec )
     spec = buf;
 
     /* check username in spec */
-    sep = strchr( spec, '@' );
+    sep = strrchr( spec, '@' );
     if ( sep != NULL ) {
         *sep = '\0';
         relay_user = strdup( spec );
