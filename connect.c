@@ -554,7 +554,7 @@ char *
 expand_host_and_port (const char *fmt, const char *host, int port)
 {
     const char *src;
-    char *buf, *dst, *ptr;
+    char *buf, *dst;
     size_t len = strlen(fmt) + strlen(host) + 20;
     buf = xmalloc (len);
     dst = buf;
@@ -1101,17 +1101,14 @@ int
 is_direct_name (const char *name)
 {
     int len, i;
-    const char *tail;
     debug("checking %s is for direct?\n", name);
     name = downcase(strdup(name));
     len = strlen(name);
     if (len < 1)
         return 0;                               /* false */
-    tail = &name[len];
     for (i=0; i<n_direct_addr_list; i++ ) {
-        int dlen, neg;
+        int neg;
         const char *dname;
-        const char *n, *d;
         dname = direct_addr_list[i].name;
         if (dname == NULL)
             continue;                           /* it's addr/mask entry */
