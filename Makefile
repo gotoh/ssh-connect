@@ -4,8 +4,8 @@
 ### Updated:  2012-06-21
 ### 
 
-UNAME := $(shell uname -s)
-WINVER := $(shell ver)
+UNAME ?= $(shell uname -s)
+WINVER ?= $(shell ver)
 
 CC=gcc
 CFLAGS=
