@@ -480,7 +480,7 @@ int proxy_auth_type = PROXY_AUTH_NONE;
 #endif /* WIN32 */
 
 /* packet operation macro */
-#define PUT_BYTE(ptr,data) (*(unsigned char*)ptr = data)
+#define PUT_BYTE(ptr,data) (*(unsigned char *)(ptr) = (unsigned char)(data))
 
 /* debug message output */
 void
@@ -1858,7 +1858,7 @@ report_text( char *prefix, char *buf )
 
 
 void
-report_bytes( char *prefix, char *buf, int len )
+report_bytes( const char *prefix, const char *buf, int len )
 {
     if ( ! f_debug )
         return;
@@ -1873,7 +1873,7 @@ report_bytes( char *prefix, char *buf, int len )
 }
 
 int
-atomic_out( SOCKET s, char *buf, int size )
+atomic_out( SOCKET s, const char *buf, int size )
 {
     int ret, len;
 
@@ -2048,7 +2048,7 @@ readpass( const char* prompt, ...)
 static int
 socks5_do_auth_userpass( int s )
 {
-    unsigned char buf[1024], *ptr;
+    char buf[1024], *ptr;
     char *pass = NULL;
     int len;
 
@@ -2168,8 +2168,9 @@ socks5_auth_parse(char *start, unsigned char *auth_list, int max_auth){
 int
 begin_socks5_relay( SOCKET s )
 {
-    unsigned char buf[256], *ptr, *env = socks5_auth;
-    unsigned char n_auth = 0; unsigned char auth_list[10], auth_method;
+    char buf[256], *ptr, *env = socks5_auth;
+    int n_auth = 0;
+    unsigned char auth_list[10], auth_method;
     int len, auth_result, i;
 
     debug( "begin_socks_relay()\n");
@@ -2303,7 +2304,7 @@ begin_socks5_relay( SOCKET s )
 int
 begin_socks4_relay( SOCKET s )
 {
-    unsigned char buf[256], *ptr;
+    char buf[256], *ptr;
 
     debug( "begin_socks_relay()\n");
 
@@ -2372,7 +2373,7 @@ char *
 make_base64_string(const char *str)
 {
     static char *buf;
-    unsigned char *src;
+    const char *src;
     char *dst;
     int bits, data, src_len, dst_len;
     /* make base64 string */
@@ -2380,8 +2381,8 @@ make_base64_string(const char *str)
     dst_len = (src_len+2)/3*4;
     buf = xmalloc(dst_len+1);
     bits = data = 0;
-    src = (unsigned char *)str;
-    dst = (unsigned char *)buf;
+    src = str;
+    dst = buf;
     while ( dst_len-- ) {
         if ( bits < 6 ) {
             data = (data << 8) | *src;
