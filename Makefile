@@ -4,8 +4,11 @@
 ### Updated:  2012-06-21
 ### 
 
-UNAME ?= $(shell uname -s)
-WINVER ?= $(shell ver)
+ifeq ($(OS), Windows_NT)
+    WINVER := $(shell ver)
+else
+    UNAME := $(shell uname -s)
+endif
 
 CC=gcc
 CFLAGS=
