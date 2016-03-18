@@ -946,8 +946,13 @@ make_localnet_as_direct (void)
     DWORD size = 0;
     DWORD ret = 0;
     /* allocate table */
-    if (GetIpAddrTable(NULL, &size, 0) == ERROR_INSUFFICIENT_BUFFER)
+    if (GetIpAddrTable(NULL, &size, 0) == ERROR_INSUFFICIENT_BUFFER) {
 	table = (MIB_IPADDRTABLE *) xmalloc (size);
+    } else {
+	error("unexpected GetIpAddrTable() behaviour, errno=%d\n", 
+	      WSAGetLastError());
+	return; // give up getting local addresses
+    }
     /* get information */
     ret = GetIpAddrTable(table, &size, 0);
     if (ret != NO_ERROR) {
