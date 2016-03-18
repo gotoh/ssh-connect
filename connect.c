@@ -2198,7 +2198,7 @@ begin_socks5_relay( SOCKET s )
     atomic_out( s, buf, ptr-buf );              /* send requst */
     atomic_in( s, buf, 2 );                     /* recv response */
     if ( (buf[0] != 5) ||                       /* ver5 response */
-         (buf[1] == 0xFF) ) {                   /* check auth method */
+         ((unsigned char)buf[1] == 0xFF) ) {	/* check auth method */
         error("No auth method accepted.\n");
         return -1;
     }
@@ -2572,7 +2572,7 @@ begin_telnet_relay( SOCKET s )
     debug("good phrase: '%s'\n", good_phrase);
     debug("bad phrases");
     sep = ':';
-    for (i=0; i< (sizeof(bad_phrase_list) / sizeof(char*)); i++) {
+    for (i=0; i<(int)(sizeof(bad_phrase_list) / sizeof(char*)); i++) {
 	debug_("%c '%s'", sep, bad_phrase_list[i]);
 	sep = ',';
     }
@@ -2602,7 +2602,7 @@ begin_telnet_relay( SOCKET s )
             return START_OK;
         }
 	/* then, check bad phrase */
-	for (i=0; i<(sizeof(bad_phrase_list)/sizeof(char*)); i++) {
+	for (i=0; i<(int)(sizeof(bad_phrase_list)/sizeof(char*)); i++) {
 	    if (strstr(buf, bad_phrase_list[i]) != NULL) {
 		debug("bad phrase is detected: '%s'\n", bad_phrase_list[i]);
 		return START_ERROR;
