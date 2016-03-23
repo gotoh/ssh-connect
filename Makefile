@@ -5,7 +5,7 @@
 ### 
 
 ifeq ($(OS), Windows_NT)
-    WINVER := $(shell ver)
+    UNAME := Windows
 else
     UNAME := $(shell uname -s)
 endif
@@ -26,7 +26,7 @@ ifeq ($(UNAME), SunOS)
 endif
 
 ## for Microsoft Windows native
-ifeq ($(findstring Windows, ${WINVER}), Windows)
+ifeq ($(UNAME), Windows)
     ifeq (${CC}, clang)
 	CFLAGS+=-ccc-gcc-name llvm-gcc.exe
 	LDLIBS+=-ccc-gcc-name llvm-gcc.exe
