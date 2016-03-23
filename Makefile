@@ -11,12 +11,12 @@ else
 endif
 
 CC=gcc
-CFLAGS=
+CFLAGS=-DSOCKLEN_T=int
 LDLIBS=
 
 ## for Mac OS X environment, use one of options
 ifeq ($(UNAME), Darwin)
-	CFLAGS=-DBIND_8_COMPAT=1
+	CFLAGS=-DBIND_8_COMPAT=1 -DSOCKLEN_T=socklen_t
 	LDLIBS=-lresolv
 endif
 
@@ -28,8 +28,8 @@ endif
 ## for Microsoft Windows native
 ifeq ($(findstring Windows, ${WINVER}), Windows)
     ifeq (${CC}, clang)
-	CFLAGS=-ccc-gcc-name llvm-gcc.exe
-	LDLIBS=-ccc-gcc-name llvm-gcc.exe
+	CFLAGS+=-ccc-gcc-name llvm-gcc.exe
+	LDLIBS+=-ccc-gcc-name llvm-gcc.exe
     endif
     LDLIBS := ${LDLIBS} -lws2_32 -liphlpapi
 endif

@@ -2822,7 +2822,7 @@ accept_connection (u_short port)
     int connection;
     struct sockaddr_in name;
     struct sockaddr client;
-    int socklen;
+    SOCKLEN_T socklen;
     fd_set ifds;
     int nfds;
     int sockopt;
