@@ -11,7 +11,7 @@ else
 endif
 
 CC=gcc
-CFLAGS=-DSOCKLEN_T=int
+CFLAGS=-DSOCKLEN_T=unsigned
 LDLIBS=
 
 ## for Mac OS X environment, use one of options

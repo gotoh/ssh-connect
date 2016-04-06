@@ -936,8 +936,8 @@ parse_addr_pair (const char *str, struct in_addr *addr, struct in_addr *mask)
 }
 
 #ifdef _WIN32
-// updates direct table with local net addr/mask informations
-// NOTE: needs platform SDK for compile and link with iphlpapi.lib.
+/* updates direct table with local net addr/mask informations
+   NOTE: needs platform SDK for compile and link with iphlpapi.lib. */
 void
 make_localnet_as_direct (void)
 {
@@ -951,7 +951,7 @@ make_localnet_as_direct (void)
     } else {
 	error("unexpected GetIpAddrTable() behaviour, errno=%d\n", 
 	      WSAGetLastError());
-	return; // give up getting local addresses
+	return; /* give up getting local addresses */
     }
     /* get information */
     ret = GetIpAddrTable(table, &size, 0);
@@ -1161,7 +1161,7 @@ int intr_flag = 0;
 
 #ifndef _WIN32
 void
-intr_handler(int sig)
+intr_handler(int sig __attribute__((unused)))
 {
     intr_flag = 1;
 }
@@ -1754,7 +1754,7 @@ set_timeout(int timeout)
         alarm( 0 );
     } else {
         debug( "setting timeout: %d seconds\n", timeout );
-        signal(SIGALRM, (void *)sig_timeout);
+        signal(SIGALRM, (__sighandler_t)sig_timeout);
         alarm( timeout );
     }
 }
