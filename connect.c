@@ -2527,7 +2527,8 @@ begin_http_relay( SOCKET s )
                 /* parse type and realm */
                 char *scheme, *realm;
                 scheme = cut_token(buf, " ");
-                realm = cut_token(scheme, " ");
+		if (scheme != NULL)
+		    realm = cut_token(scheme, " ");
                 if ( scheme == NULL || realm == NULL ) {
                     debug("Invalid format of %s field.", auth_what);
                     return START_ERROR;         /* fail */
