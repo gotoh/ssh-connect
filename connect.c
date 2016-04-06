@@ -713,10 +713,10 @@ void
 read_parameter_file_1(const char* name)
 {
     FILE* f;
-    int line;
     char lbuf[1025];
     f = fopen(name, "r");
     if( f ){
+        int line;
         debug("Reading parameter file(%s)\n", name);
         for ( line = 1; fgets(lbuf, 1024, f); line++ ) {
             char *p, *q, *param, *value;
@@ -757,6 +757,7 @@ read_parameter_file_1(const char* name)
                 debug("Parameter `%s' is set to `%s'\n", param, value);
             }
         }
+        fclose(f);
     }
 }
 
@@ -876,7 +877,7 @@ parse_addr_pair (const char *str, struct in_addr *addr, struct in_addr *mask)
     */
     const char *ptr;
     u_char *dsta, *dstm;
-    int i, n;
+    int i;
 
     assert( str != NULL );
     addr->s_addr = 0;
@@ -924,6 +925,7 @@ parse_addr_pair (const char *str, struct in_addr *addr, struct in_addr *mask)
         /* complete as format #1 */
     } else {
         /* case of format #2 */
+        int n;
         if ( !isdigit(*ptr) )
             return -1;                  /* format error: */
         n = atoi(ptr);
@@ -1220,8 +1222,10 @@ tty_readpass( const char *prompt, char *buf, size_t size )
         error("Unable to open %s\n", TTY_NAME);
         return -1;                              /* can't open tty */
     }
-    if ( size <= 0 )
+    if ( size == 0 ) {
+        close(tty);
         return -1;                              /* no room */
+    }
     write(tty, prompt, strlen(prompt));
     buf[0] = '\0';
     tty_change_echo(tty, 0);                    /* disable echo */
@@ -2040,9 +2044,11 @@ readpass( const char* prompt, ...)
         if ( fp == NULL )
             return NULL;                        /* fail */
         buf[0] = '\0';
-        if (fgets(buf, sizeof(buf), fp) == NULL)
+        if (fgets(buf, sizeof(buf), fp) == NULL) {
+            pclose(fp);
             return NULL;                        /* fail */
-        fclose(fp);
+        }
+        pclose(fp);
     } else {
         tty_readpass( buf, buf, sizeof(buf));
     }
