@@ -487,8 +487,8 @@ int proxy_auth_type = PROXY_AUTH_NONE;
 void
 debug( const char *fmt, ... )
 {
-    va_list args;
     if ( f_debug ) {
+	va_list args;
         va_start( args, fmt );
         fprintf(stderr, "DEBUG: ");
         vfprintf( stderr, fmt, args );
@@ -499,9 +499,9 @@ debug( const char *fmt, ... )
 void
 debug_( const char *fmt, ... )                  /* without prefix */
 {
-    va_list args;
     if ( f_debug ) {
-        va_start( args, fmt );
+	va_list args;
+	va_start( args, fmt );
         vfprintf( stderr, fmt, args );
         va_end( args );
     }
@@ -1384,7 +1384,7 @@ determine_relay_password ()
 int
 set_relay( int method, char *spec )
 {
-    char *buf, *sep, *resolve;
+    char *buf, *sep;
 
     relay_method = method;
 
@@ -1420,6 +1420,7 @@ set_relay( int method, char *spec )
 
         /* determine resolve method */
         if ( socks_resolve == RESOLVE_UNKNOWN ) {
+	    char *resolve;
             if ( ((socks_version == 5) &&
                   ((resolve = getparam(ENV_SOCKS5_RESOLVE)) != NULL)) ||
                  ((socks_version == 4) &&
@@ -1885,14 +1886,14 @@ report_bytes( const char *prefix, const char *buf, int len )
 int
 atomic_out( SOCKET s, const char *buf, int size )
 {
-    int ret, len;
+    int ret;
 
     assert( buf != NULL );
     assert( 0<=size );
     /* do atomic out */
     ret = 0;
     while ( 0 < size ) {
-        len = send( s, buf+ret, size, 0 );
+        int len = send( s, buf+ret, size, 0 );
         if ( len == -1 )
             fatal("atomic_out() failed to send(), %d\n", socket_errno());
         ret += len;
@@ -1911,7 +1912,7 @@ atomic_out( SOCKET s, const char *buf, int size )
 int
 atomic_in( SOCKET s, char *buf, int size )
 {
-    int ret, len;
+    int ret;
 
     assert( buf != NULL );
     assert( 0<=size );
@@ -1919,7 +1920,7 @@ atomic_in( SOCKET s, char *buf, int size )
     /* do atomic in */
     ret = 0;
     while ( 0 < size ) {
-        len = recv( s, buf+ret, size, 0 );
+        int len = recv( s, buf+ret, size, 0 );
         if ( len == -1 ) {
             fatal("atomic_in() failed to recv(), %d\n", socket_errno());
         } else if ( len == 0 ) {
@@ -2183,7 +2184,7 @@ begin_socks5_relay( SOCKET s )
     char buf[256], *ptr, *env = socks5_auth;
     int n_auth = 0;
     unsigned char auth_list[10], auth_method;
-    int len, auth_result, i;
+    int auth_result, i;
 
     debug( "begin_socks_relay()\n");
 
@@ -2248,6 +2249,7 @@ begin_socks5_relay( SOCKET s )
     PUT_BYTE( ptr++, 0);                        /* FLG: 0 */
     if ( dest_addr.sin_addr.s_addr == 0 ) {
         /* resolved by SOCKS server */
+	int len;
         PUT_BYTE( ptr++, 3);                    /* ATYP: DOMAINNAME */
         len = strlen(dest_host);
         PUT_BYTE( ptr++, len);                  /* DST.ADDR (len) */
@@ -2679,7 +2681,6 @@ do_repeater( SOCKET local_in, SOCKET local_out, SOCKET remote )
     /** other variables **/
     int nfds, len;
     fd_set ifds, ofds;
-    struct timeval *tmo;
 #ifdef _WIN32
     struct timeval win32_tmo;
 #endif /* _WIN32 */
@@ -2692,6 +2693,7 @@ do_repeater( SOCKET local_in, SOCKET local_out, SOCKET remote )
     rbuf_len = 0;
 
     while ( f_local || f_remote ) {
+	struct timeval *tmo;
         FD_ZERO(&ifds );
         FD_ZERO(&ofds );
         tmo = NULL;
