@@ -2576,7 +2576,7 @@ begin_telnet_relay( SOCKET s )
     char *bad_phrase_list[] = {
 	" failed", " refused", " rejected", " closed"
     };
-    char sep = ' ';
+    char sep;
     int i;
 
     debug("begin_telnet_relay()\n");
