@@ -477,6 +477,7 @@ int proxy_auth_type = PROXY_AUTH_NONE;
 
 #ifdef _WIN32
 #define popen _popen
+#define pclose _pclose
 #endif /* WIN32 */
 
 /* packet operation macro */
