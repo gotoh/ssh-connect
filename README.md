@@ -376,7 +376,7 @@ host over the firewall via SOCKS or HTTP proxy without SOCKSifying
 Emacs itself.
 
 There is sample code: 
-http://bitbucket.org/gotoh/connect/src/tip/relay.el ... (*url is not exist*)
+https://github.com/gotoh/ssh-connect/blob/master/relay.el
 
 With this code, you can use `relay-open-network-stream` function instead
 of `open-network-stream` to make network connection. See top comments of
