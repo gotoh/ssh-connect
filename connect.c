@@ -290,7 +290,7 @@
    Win32 environment does not support -R option (vc and cygwin)
    Win32 native compilers does not support -w option, yet (vc)
 */
-static char *usage = "usage: %s [-dnhst45] [-p local-port]"
+static char *usage = "usage: %s [-dDnhst45] [-p local-port]"
 #ifdef _WIN32
 #ifdef __CYGWIN32__
 "[-w timeout] \n"                               /* cygwin cannot -R */
