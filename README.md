@@ -175,29 +175,33 @@ usage:  connect [-dnhs45] [-R resolve] [-p local-port] [-w sec]
 host and port is target hostname and port-number to connect.
 
 
-`-H` [user@]server[:port]::
-  Specify hostname and port number of http proxy server to
+`-H [user@]server[:port]`
+: Specify hostname and port number of http proxy server to
   relay. If port is omitted, 80 is used.
 
-`-h`::
-  Use HTTP proxy via proxy server sepcified by environment variable
+`-h`
+: Use HTTP proxy via proxy server sepcified by environment variable
   `HTTP_PROXY`.
 
-`-S` \[_user_@]_server_\[:_port_]::
-  Specify hostname and port number of SOCKS server to
+`-S [user@]server[:port]`
+: Specify hostname and port number of SOCKS server to
   relay. Like `-H` option, port number can be omit and default is 1080.
 
-`-s`::
-  Use SOCKS proxy via SOCKS server sepcified by environment variable
+`-s`
+: Use SOCKS proxy via SOCKS server sepcified by environment variable
   `SOCKS5_SERVER`.
 
 
-`-4`:: Use SOCKS version 4 protocol.
+`-4`
+: Use SOCKS version 4 protocol.
   This option must be used with `-S`.
-`-5`:: Use SOCKS version 5 protocol.
+  
+`-5`
+: Use SOCKS version 5 protocol.
   This option must be used with `-S`.
 
-`-R` _method_:: The method to resolve hostname.  3 keywords (`local`,
+`-R <method>` 
+: The method to resolve hostname.  3 keywords (`local`,
   `remote`, `both`) or dot-notation IP address is allowed. Keyword
   both means; _"Try local first, then remote"_. If dot-notation IP
   address is specified, use this host as nameserver (UNIX
@@ -205,19 +209,31 @@ host and port is target hostname and port-number to connect.
   protocol, remote resolving method (remote and both) use protocol
   version 4a.
 
-`-p` _port_:: Accept on local TCP port and relay it instead of standard input
-and output. With this option, program will terminate when remote or
-local TCP session is closed.
+`-p <port>` 
+: Accept on local TCP port and relay it instead of standard input
+  and output. With this option, program will terminate when remote or
+  local TCP session is closed.
 
-`-w` _timeout_:: Timeout seconds for connecting to remote host.
+`-w <second>`
+: Timeout seconds for connecting to remote host.
 
-`-a` _auth_:: option specifiys user intended authentication methods
-separated by comma. Currently `userpass` and `none` are
-supported. Default is userpass. You can also specifying this parameter
-by the environment variable `SOCKS5_AUTH`.
+`-a <auth>`
+: option specifiys user intended authentication methods
+  separated by comma. Currently `userpass` and `none` are
+  supported. Default is userpass. You can also specifying this parameter
+  by the environment variable `SOCKS5_AUTH`.
 
-`-d`: Run with debug message output. If you fail to connect, use this
-option to see what is done.
+`-d`
+: Run with debug message output. If you fail to connect, use this
+  option to see what is done.
+
+`-D`
+: Enables automatic direct connection for local networks. 
+When specified, the program enumerates IP addresses and netmasks
+from network interfaces and adds them to the direct connection list.
+This causes connections to hosts on local networks to bypass the proxy server.
+(from ver. 1.106) \
+**NOTE:** In Win32 environment, this function is ON by default in ver. 1.105 and earlier.
 
 As additional feature, 
 you can omit port argument when program name is special format
