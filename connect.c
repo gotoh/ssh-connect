@@ -64,7 +64,7 @@
  *   You can specify proxy method in an environment variable or in a
  *   command line option.
  *
- *   usage:  connect [-dnhst45] [-R resolve] [-p local-port] [-w sec]
+ *   usage:  connect [-dDnhst45] [-R resolve] [-p local-port] [-w sec]
  *                   [-H [user@]proxy-server[:port]]
  *                   [-S [user@]socks-server[:port]]
  *                   [-T proxy-server[:port]]
@@ -109,6 +109,12 @@
  *
  *   The '-d' option is used for debug. If you fail to connect, use this
  *   and check request to and response from server.
+ *
+ *   The '-D' option enables automatic direct connection for local
+ *   networks. When specified, the program enumerates IP addresses and
+ *   netmasks from network interfaces and adds them to the direct
+ *   connection list. This causes connections to hosts on local networks
+ *   to bypass the proxy server.
  *
  *   You can omit the "port" argument when program name is special format
  *   containing port number itself. For example,
@@ -245,6 +251,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <ifaddrs.h>
 #if !defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__INTERIX)
 #define WITH_RESOLVER 1
 #include <arpa/nameser.h>
@@ -325,6 +332,9 @@ u_short local_port = 0;                         /* option 'p' */
 int f_hold_session = 0;                         /* option 'P' */
 
 char *telnet_command = "telnet %h %p";
+
+/* make direct address list from IP addresses of network I/F. */
+int f_auto_direct = 0;
 
 /* utiity types, pair holder of number and string */
 typedef struct {
@@ -938,12 +948,12 @@ parse_addr_pair (const char *str, struct in_addr *addr, struct in_addr *mask)
     return 0;
 }
 
-#ifdef _WIN32
 /* updates direct table with local net addr/mask informations
    NOTE: needs platform SDK for compile and link with iphlpapi.lib. */
 void
 make_localnet_as_direct (void)
 {
+#ifdef _WIN32
     DWORD i;
     PMIB_IPADDRTABLE table;
     DWORD size = 0;
@@ -969,8 +979,34 @@ make_localnet_as_direct (void)
 			(struct in_addr *)&table->table[i].dwMask, 0);
     }
     free(table);
-}
+
+#else /* not _WIN32 */
+    
+    struct ifaddrs *ifap, *ifa;
+
+    if (getifaddrs(&ifap) != 0) {
+        error("getifaddrs() failed, errno=%d\n", errno);
+        return;
+    }
+
+    debug("making direct addr list from network interface address:\n");
+    for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL)
+            continue;
+        if (ifa->ifa_addr->sa_family != AF_INET)
+            continue;  /* IPv4 only */
+        if (ifa->ifa_netmask == NULL)
+            continue;
+        add_direct_addr(
+            &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr,
+            &((struct sockaddr_in *)ifa->ifa_netmask)->sin_addr,
+            0);
+    }
+
+    freeifaddrs(ifap);
 #endif
+}
+
 
 
 void
@@ -1647,6 +1683,10 @@ getarg( int argc, char **argv )
                 f_debug++;
                 break;
 
+            case 'D':                           /* auto direct IP */
+                f_auto_direct = 1;
+                break;
+
             default:
                 error("unknown option '-%c'\n", *ptr);
                 err++;
@@ -1660,10 +1700,10 @@ getarg( int argc, char **argv )
     if ( 0 < err )
         goto quit;
 
-#ifdef _WIN32
-    /* add local addr/mask to direct table automaticaly */
-    make_localnet_as_direct();
-#endif
+    if (f_auto_direct) {
+	/* add local addr/mask to direct table automaticaly */
+	make_localnet_as_direct();
+    }
     
     set_relay( method, server );
 
