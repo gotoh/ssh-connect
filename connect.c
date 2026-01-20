@@ -2664,17 +2664,20 @@ stdindatalen (void)
 }
 #endif /* _WIN32 */
 
+char lbuf[512*1024];
+char rbuf[512*1024];
+
 /* relay byte from stdin to socket and fro socket to stdout.
    returns reason of termination */
 int
 do_repeater( SOCKET local_in, SOCKET local_out, SOCKET remote )
 {
     /** vars for local input data **/
-    char lbuf[1024];                            /* local input buffer */
+                              /* local input buffer */
     int lbuf_len;                               /* available data in lbuf */
     int f_local;                                /* read local input more? */
     /** vars for remote input data **/
-    char rbuf[1024];                            /* remote input buffer */
+                         /* remote input buffer */
     int rbuf_len;                               /* available data in rbuf */
     int f_remote;                               /* read remote input more? */
     int close_reason = REASON_UNK;              /* reason of end repeating */
@@ -2706,7 +2709,7 @@ do_repeater( SOCKET local_in, SOCKET local_out, SOCKET remote )
                    So use select() with short timeout and checking data
                    in stdin by another method. */
                 win32_tmo.tv_sec = 0;
-                win32_tmo.tv_usec = 10*1000;    /* 10 ms */
+                win32_tmo.tv_usec = 1;    /* with minimum wait */
                 tmo = &win32_tmo;
             } else
 #endif /* !_WIN32 */
@@ -2832,7 +2835,11 @@ accept_connection (u_short port)
     int connection;
     struct sockaddr_in name;
     struct sockaddr client;
-    SOCKLEN_T socklen;
+#ifdef _WIN32
+    int socklen;
+#else
+    socklen_t socklen;
+#endif
     fd_set ifds;
     int nfds;
     int sockopt;
