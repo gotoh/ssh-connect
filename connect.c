@@ -227,8 +227,8 @@
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include <sys/stat.h>
 #include <io.h>
@@ -2835,11 +2835,7 @@ accept_connection (u_short port)
     int connection;
     struct sockaddr_in name;
     struct sockaddr client;
-#ifdef _WIN32
-    int socklen;
-#else
     socklen_t socklen;
-#endif
     fd_set ifds;
     int nfds;
     int sockopt;
