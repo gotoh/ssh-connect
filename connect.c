@@ -1741,7 +1741,7 @@ quit:
 
 /* timeout signal hander */
 void
-sig_timeout(void)
+sig_timeout(int sig)
 {
     signal( SIGALRM, SIG_IGN );
     alarm( 0 );
@@ -1760,7 +1760,7 @@ set_timeout(int timeout)
         alarm( 0 );
     } else {
         debug( "setting timeout: %d seconds\n", timeout );
-        signal(SIGALRM, (__sighandler_t)sig_timeout);
+        signal(SIGALRM, sig_timeout);
         alarm( timeout );
     }
 }
