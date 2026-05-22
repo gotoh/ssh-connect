@@ -216,6 +216,10 @@
  *               iphlpapi.lib.
  ***********************************************************************/
 
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE             /* for F_SETPIPE_SZ and splice() */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -2982,6 +2986,14 @@ main( int argc, char **argv )
 #ifdef _WIN32
         _setmode(local_in, O_BINARY);
         _setmode(local_out, O_BINARY);
+#endif
+#ifdef __linux__
+        /* Enlarge the stdin/stdout pipes. do_repeater() drains up to
+           512KB at once, but the default 64KB pipe capacity caps the
+           relay; a larger pipe means far fewer write iterations.
+           F_SETPIPE_SZ is only a hint -- ignore failure. */
+        (void)fcntl( local_in,  F_SETPIPE_SZ, 1 << 20 );
+        (void)fcntl( local_out, F_SETPIPE_SZ, 1 << 20 );
 #endif
     }
 
