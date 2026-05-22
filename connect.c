@@ -249,6 +249,7 @@
 #endif /* __hpux */
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ifaddrs.h>
@@ -1864,6 +1865,13 @@ open_connection( const char *host, u_short port )
          == SOCKET_ERROR) {
         debug( "connect() failed.\n");
         return SOCKET_ERROR;
+    }
+    {
+        /* SSH carries many small interactive packets, and the proxy
+           handshake is sent in pieces; disable Nagle so they are not
+           delayed waiting for an ACK of the previous segment. */
+        int on = 1;
+        setsockopt( s, IPPROTO_TCP, TCP_NODELAY, (void*)&on, sizeof(on) );
     }
     return s;
 }
