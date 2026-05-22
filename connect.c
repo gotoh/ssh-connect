@@ -216,6 +216,10 @@
  *               iphlpapi.lib.
  ***********************************************************************/
 
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE             /* for F_SETPIPE_SZ and splice() */
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -241,6 +245,7 @@
 #include <conio.h>
 #else /* !_WIN32 */
 #include <unistd.h>
+#include <sys/stat.h>
 #include <pwd.h>
 #include <termios.h>
 #include <sys/time.h>
@@ -249,6 +254,7 @@
 #endif /* __hpux */
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ifaddrs.h>
@@ -1865,6 +1871,13 @@ open_connection( const char *host, u_short port )
         debug( "connect() failed.\n");
         return SOCKET_ERROR;
     }
+    {
+        /* SSH carries many small interactive packets, and the proxy
+           handshake is sent in pieces; disable Nagle so they are not
+           delayed waiting for an ACK of the previous segment. */
+        int on = 1;
+        setsockopt( s, IPPROTO_TCP, TCP_NODELAY, (void*)&on, sizeof(on) );
+    }
     return s;
 }
 
@@ -2707,6 +2720,71 @@ stdindatalen (void)
 char lbuf[512*1024];
 char rbuf[512*1024];
 
+#ifdef __linux__
+#define SPLICE_LEN (256*1024)
+/* Zero-copy relay fast path (Linux).
+   When connect runs as an OpenSSH ProxyCommand, local_in/local_out
+   are pipes; splice() can then move data directly between the pipe
+   and the socket without the kernel<->userspace copy that recv()
+   and send() in do_repeater() perform on every byte.
+   Used only when both local ends are pipes and verbose byte dumping
+   is off; otherwise the caller falls back to do_repeater(). */
+int
+do_repeater_splice( int local_in, int local_out, SOCKET remote )
+{
+    int nfds = ((local_in < remote) ? remote : local_in) + 1;
+    int f_local = 1, f_remote = 1;
+    int close_reason = REASON_UNK;
+    fd_set ifds;
+
+    while ( f_local || f_remote ) {
+        FD_ZERO( &ifds );
+        if ( f_local )  FD_SET( local_in, &ifds );
+        if ( f_remote ) FD_SET( remote, &ifds );
+        if ( select( nfds, &ifds, NULL, NULL, NULL ) == -1 ) {
+            if ( errno == EINTR )
+                continue;
+            error( "select() failed, %d\n", socket_errno() );
+            return REASON_ERROR;
+        }
+
+        /* remote => local (socket => stdout pipe) */
+        if ( f_remote && FD_ISSET( remote, &ifds ) ) {
+            ssize_t n = splice( remote, NULL, local_out, NULL,
+                                SPLICE_LEN, SPLICE_F_MOVE );
+            if ( n == 0 ) {
+                debug( "connection closed by peer\n" );
+                close_reason = REASON_CLOSED_BY_REMOTE;
+                f_remote = f_local = 0;
+            } else if ( n == -1 ) {
+                if ( errno == EINTR )
+                    continue;
+                fatal( "splice() failed, errno=%d\n", errno );
+            } else
+                debug( "spliced %ld bytes <<<\n", (long)n );
+        }
+
+        /* local => remote (stdin pipe => socket) */
+        if ( f_local && FD_ISSET( local_in, &ifds ) ) {
+            ssize_t n = splice( local_in, NULL, remote, NULL,
+                                SPLICE_LEN, SPLICE_F_MOVE );
+            if ( n == 0 ) {
+                debug( "local input is EOF\n" );
+                shutdown( remote, 1 );          /* no more writing */
+                f_local = 0;
+                close_reason = REASON_CLOSED_BY_LOCAL;
+            } else if ( n == -1 ) {
+                if ( errno == EINTR )
+                    continue;
+                fatal( "splice() failed, errno=%d\n", errno );
+            } else
+                debug( "spliced %ld bytes >>>\n", (long)n );
+        }
+    }
+    return close_reason;
+}
+#endif /* __linux__ */
+
 /* relay byte from stdin to socket and fro socket to stdout.
    returns reason of termination */
 int
@@ -2975,6 +3053,14 @@ main( int argc, char **argv )
         _setmode(local_in, O_BINARY);
         _setmode(local_out, O_BINARY);
 #endif
+#ifdef __linux__
+        /* Enlarge the stdin/stdout pipes. do_repeater() drains up to
+           512KB at once, but the default 64KB pipe capacity caps the
+           relay; a larger pipe means far fewer write iterations.
+           F_SETPIPE_SZ is only a hint -- ignore failure. */
+        (void)fcntl( local_in,  F_SETPIPE_SZ, 1 << 20 );
+        (void)fcntl( local_out, F_SETPIPE_SZ, 1 << 20 );
+#endif
     }
 
 retry:
@@ -3051,7 +3137,25 @@ retry:
     /* main loop */
     debug ("start relaying.\n");
 do_repeater:
-    reason = do_repeater(local_in, local_out, remote);
+    {
+        int used_splice = 0;
+#ifdef __linux__
+        /* Use the zero-copy fast path for the stdio ProxyCommand case
+           when both local ends are pipes and verbose byte dumping
+           (-d -d) is off.  Anything else uses do_repeater(). */
+        if ( local_type == LOCAL_STDIO && f_debug < 2 && !f_hold_session ) {
+            struct stat si, so;
+            if ( fstat( local_in, &si ) == 0 &&
+                 fstat( local_out, &so ) == 0 &&
+                 S_ISFIFO( si.st_mode ) && S_ISFIFO( so.st_mode ) ) {
+                reason = do_repeater_splice( local_in, local_out, remote );
+                used_splice = 1;
+            }
+        }
+#endif /* __linux__ */
+        if ( !used_splice )
+            reason = do_repeater(local_in, local_out, remote);
+    }
     debug ("relaying done.\n");
     if (local_type == LOCAL_SOCKET &&
         reason == REASON_CLOSED_BY_LOCAL &&
