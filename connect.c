@@ -2707,6 +2707,64 @@ stdindatalen (void)
 char lbuf[512*1024];
 char rbuf[512*1024];
 
+#ifdef _WIN32
+/* On Windows, select() cannot wait on the stdin handle, so the generic
+   do_repeater() has to poll it.  For stdio relaying, use a thread for
+   stdin => socket instead, so that both directions are blocking I/O. */
+static DWORD WINAPI
+win32_stdin_relay( LPVOID arg )
+{
+    SOCKET remote = (SOCKET)arg;
+    int len, n, off;
+
+    while ( 0 < (len = read(0, lbuf, sizeof(lbuf))) ) {
+        if ( 1 < f_debug )                      /* more verbose */
+            report_bytes( ">>>", lbuf, len);
+        for ( off = 0; off < len; off += n ) {
+            n = send(remote, lbuf + off, len - off, 0);
+            if ( n == SOCKET_ERROR ) {
+                /* connection is gone, recv() in main thread sees it */
+                debug("send() failed, %d\n", socket_errno());
+                return 0;
+            }
+        }
+        debug("sent %d bytes\n", len);
+    }
+    if ( len == -1 )
+        fatal("read() failed, errno = %d\n", errno);
+    debug("local input is EOF\n");
+    shutdown(remote, SD_SEND);                  /* no-more writing */
+    return 0;
+}
+
+static int
+win32_stdio_repeater( SOCKET remote )
+{
+    HANDLE th;
+    int len, n, off;
+
+    th = CreateThread(NULL, 0, win32_stdin_relay, (LPVOID)remote, 0, NULL);
+    if ( th == NULL )
+        fatal("CreateThread() failed, %d\n", GetLastError());
+    CloseHandle(th);
+
+    while ( 0 < (len = recv(remote, rbuf, sizeof(rbuf), 0)) ) {
+        debug("recv %d bytes\n", len);
+        if ( 1 < f_debug )                      /* more verbose */
+            report_bytes( "<<<", rbuf, len);
+        for ( off = 0; off < len; off += n ) {
+            n = write(1, rbuf + off, len - off);
+            if ( n == -1 )
+                fatal("output (local) failed, errno=%d\n", errno);
+        }
+    }
+    if ( len == -1 && socket_errno() != WSAECONNRESET )
+        fatal("recv() failed, %d\n", socket_errno());
+    debug("connection %s by peer\n", (len==0)? "closed": "reset");
+    return REASON_CLOSED_BY_REMOTE;
+}
+#endif /* _WIN32 */
+
 /* relay byte from stdin to socket and fro socket to stdout.
    returns reason of termination */
 int
@@ -2726,6 +2784,11 @@ do_repeater( SOCKET local_in, SOCKET local_out, SOCKET remote )
     fd_set ifds, ofds;
 #ifdef _WIN32
     struct timeval win32_tmo;
+#endif /* _WIN32 */
+
+#ifdef _WIN32
+    if ( local_type != LOCAL_SOCKET )
+        return win32_stdio_repeater( remote );
 #endif /* _WIN32 */
 
     /* repeater between stdin/out and socket  */
